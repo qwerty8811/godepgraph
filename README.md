@@ -28,6 +28,13 @@ You can also generate [Mermaid](https://mermaid.js.org/) graphs:
 
     godepgraph -format mermaid github.com/kisielk/godepgraph > graph.mmd
 
+To write the graph to a file instead of stdout, use `-output`. If the file
+already exists it is truncated. Omit `-output` (or pass an empty value) to
+print to stdout.
+
+    godepgraph -output deps.dot github.com/kisielk/godepgraph
+    godepgraph -format mermaid -output graph.mmd github.com/kisielk/godepgraph
+
 By default godepgraph will display packages in the standard library in the
 graph, though it will not delve in to their dependencies.
 

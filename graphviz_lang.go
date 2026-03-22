@@ -3,25 +3,28 @@ package main
 import (
 	"fmt"
 	"go/build"
+	"io"
 )
 
 // graphvizPrinter implements graphPrinter for the DOT / GraphViz diagramming language.
 type graphvizPrinter struct {
+	out io.Writer
 	ids map[string]string
 }
 
-func newGraphvizPrinter() *graphvizPrinter {
+func newGraphvizPrinter(out io.Writer) *graphvizPrinter {
 	p := new(graphvizPrinter)
+	p.out = out
 	p.ids = make(map[string]string)
 	return p
 }
 
 func (p *graphvizPrinter) writeHeader(hLayout bool) {
-	fmt.Println("digraph godep {")
+	fmt.Fprintln(p.out, "digraph godep {")
 	if hLayout {
-		fmt.Println(`rankdir="LR"`)
+		fmt.Fprintln(p.out, `rankdir="LR"`)
 	}
-	fmt.Println(`splines=ortho
+	fmt.Fprintln(p.out, `splines=ortho
 nodesep=0.4
 ranksep=0.8
 node [shape="box",style="rounded,filled"]
@@ -45,13 +48,13 @@ func (p *graphvizPrinter) writeNode(pkgName string, attrs *build.Package) {
 		color = "paleturquoise"
 	}
 
-	fmt.Printf("%s [label=\"%s\" color=\"%s\" URL=\"%s\" target=\"_blank\"];\n", id, pkgName, color, pkgDocsURL(pkgName))
+	fmt.Fprintf(p.out, "%s [label=\"%s\" color=\"%s\" URL=\"%s\" target=\"_blank\"];\n", id, pkgName, color, pkgDocsURL(pkgName))
 }
 
 func (p *graphvizPrinter) writeEdge(u string, v string) {
 	uId := p.getId(u)
 	vId := p.getId(v)
-	fmt.Printf("%s -> %s;\n", uId, vId)
+	fmt.Fprintf(p.out, "%s -> %s;\n", uId, vId)
 }
 
 func (p *graphvizPrinter) getId(pkgName string) string {
@@ -64,5 +67,5 @@ func (p *graphvizPrinter) getId(pkgName string) string {
 }
 
 func (p *graphvizPrinter) writeEnd() {
-	fmt.Println("}")
+	fmt.Fprintln(p.out, "}")
 }

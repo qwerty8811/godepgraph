@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"go/build"
+	"io"
 	"log"
 	"os"
 	"sort"
@@ -39,9 +40,11 @@ var (
 	withTests      = flag.Bool("withtests", false, "include test packages")
 	maxLevel       = flag.Int("maxlevel", 256, "max level of go dependency graph")
 	format         = flag.String("format", "dot", "output format of graph (dot, mermaid)")
+	outputPath     = flag.String("output", "", "write graph to this file (empty: stdout); truncate if exists")
 
 	buildTags    []string
-	buildContext = build.Default
+	buildContext           = build.Default
+	writer       io.Writer = io.Writer(os.Stdout)
 )
 
 func init() {
@@ -80,6 +83,15 @@ func main() {
 		buildTags = strings.Split(*tagList, ",")
 	}
 	buildContext.BuildTags = buildTags
+
+	if *outputPath != "" {
+		f, err := os.Create(*outputPath)
+		if err != nil {
+			log.Fatalf("failed to create output file: %s", err)
+		}
+		defer f.Close()
+		writer = f
+	}
 
 	printer, err := getPrinter()
 	if err != nil {
@@ -243,9 +255,9 @@ func normalizeVendor(path string) string {
 func getPrinter() (graphPrinter, error) {
 	switch *format {
 	case "dot":
-		return newGraphvizPrinter(), nil
+		return newGraphvizPrinter(writer), nil
 	case "mermaid":
-		return newMermaidPrinter(), nil
+		return newMermaidPrinter(writer), nil
 	default:
 		return nil, fmt.Errorf("invalid format flag %q, must be: dot, mermaid", *format)
 	}
